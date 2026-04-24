@@ -22,7 +22,7 @@ from dataclasses import dataclass, asdict
 from typing import Optional
 
 from .config import Config
-from .glean_client import GleanClient
+from .glean_client import QueryClient
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class GroundedAnswer:
 
 
 def retrieve(
-    client: GleanClient,
+    client: QueryClient,
     question: str,
     *,
     max_sources: int,
@@ -76,7 +76,7 @@ def retrieve(
 
 
 def ground(
-    client: GleanClient,
+    client: QueryClient,
     question: str,
     docs: list[RetrievedDoc],
 ) -> tuple[str, int]:
@@ -140,7 +140,7 @@ def assemble(
 
 
 def answer_question(
-    client: GleanClient,
+    client: QueryClient,
     question: str,
     *,
     max_sources: int,

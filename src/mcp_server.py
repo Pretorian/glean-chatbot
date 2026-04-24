@@ -19,7 +19,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 from .config import load_config
-from .glean_client import GleanClient
+from .glean_client import QueryClient
 from .rag import answer_question
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ TOOL_INPUT_SCHEMA = {
 }
 
 
-def _build_server(client: GleanClient, default_max_sources: int) -> Server:
+def _build_server(client: QueryClient, default_max_sources: int) -> Server:
     server = Server("glean-rag")
 
     @server.list_tools()
@@ -108,7 +108,7 @@ def _build_server(client: GleanClient, default_max_sources: int) -> Server:
 async def _run_stdio() -> None:
     cfg = load_config()
     logging.basicConfig(level=cfg.log_level)
-    client = GleanClient(cfg)
+    client = QueryClient(cfg)
     server = _build_server(client, cfg.default_max_sources)
 
     async with stdio_server() as (read_stream, write_stream):
@@ -118,7 +118,7 @@ async def _run_stdio() -> None:
 def _run_test(question: str) -> None:
     cfg = load_config()
     logging.basicConfig(level=cfg.log_level)
-    client = GleanClient(cfg)
+    client = QueryClient(cfg)
     result = answer_question(
         client,
         question=question,

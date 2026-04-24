@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 
 from .config import load_config
-from .glean_client import GleanClient
+from .glean_client import IndexingClient
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def _build_document(path: Path, datasource: str) -> dict:
 def run() -> None:
     cfg = load_config()
     logging.basicConfig(level=cfg.log_level)
-    client = GleanClient(cfg)
+    client = IndexingClient(cfg)
 
     if not CORPUS_DIR.exists():
         raise SystemExit(f"Corpus directory not found: {CORPUS_DIR}")

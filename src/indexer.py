@@ -25,7 +25,7 @@ def _stable_id(prefix: str, content: str) -> str:
     return f"{prefix}:{digest}"
 
 
-def _build_document(path: Path, datasource: str) -> dict:
+def _build_document(path: Path, datasource: str, instance: str) -> dict:
     content = path.read_text(encoding="utf-8")
     # First non-empty line as title, falling back to filename.
     title = next(
@@ -36,11 +36,13 @@ def _build_document(path: Path, datasource: str) -> dict:
 
     # The exact schema depends on the Indexing API version — confirm against
     # sandbox docs. This shape matches the common Glean custom-datasource schema.
+    # NOTE: viewURL must match the datasource's configured URL pattern.
+    # Pattern for interviewds: https://internal.example.com/policies/.*
     return {
         "id": doc_id,
         "title": title,
         "datasource": datasource,
-        "viewURL": f"file://{path.resolve()}",   # placeholder for local corpus
+        "viewURL": f"https://internal.example.com/policies/{path.stem}",
         "body": {
             "mimeType": "text/markdown",
             "textContent": content,
@@ -65,7 +67,7 @@ def run() -> None:
     if not files:
         raise SystemExit(f"No markdown files in {CORPUS_DIR}")
 
-    documents = [_build_document(p, cfg.glean_datasource) for p in files]
+    documents = [_build_document(p, cfg.glean_datasource, cfg.glean_instance) for p in files]
     log.info("indexing_start", extra={"count": len(documents), "datasource": cfg.glean_datasource})
 
     # Batch if the API requires it; for ~20 docs a single call is fine.

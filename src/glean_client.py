@@ -136,7 +136,7 @@ class IndexingClient(_BaseClient):
         Note: Indexing is asynchronous — documents may not be immediately
         searchable after this call returns 200.
         """
-        url = f"{self.cfg.indexing_base_url}/bulkindexdocuments"
+        url = f"{self.cfg.indexing_base_url}/indexdocuments"
         payload = {
             "datasource": self.cfg.glean_datasource,
             "documents": documents,

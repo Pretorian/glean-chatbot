@@ -17,6 +17,9 @@
     "test:all": "./test-all.sh",
     "test:datasources": "tsx server/scripts/test-datasources.ts",
     "test:auth": "tsx server/scripts/test-auth.ts",
+    "latency": "./scripts/check-latency.sh",
+    "latency:watch": "./scripts/check-latency.sh --watch",
+    "latency:stats": "./scripts/check-latency.sh --runs 5 --log",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },

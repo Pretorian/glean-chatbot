@@ -69,4 +69,4 @@ Try these to test the chatbot:
 
 **Need help?**
 - See README_NODE.md for full documentation
-- Check the original Python README.md for design details
+- Check README.md for design and architecture details

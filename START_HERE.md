@@ -1,6 +1,6 @@
 # 👋 Start Here - Glean RAG Chatbot
 
-Welcome! This is a complete refactor of the Python Glean RAG chatbot into a modern **Node.js/TypeScript/React** stack.
+Welcome! This is a **Node.js/TypeScript/React** RAG chatbot built on the Glean Indexing, Search, and Chat APIs.
 
 ---
 
@@ -105,7 +105,7 @@ See [examples/README.md](examples/README.md) for more!
 
 ### Curious about the design?
 
-**Check:** `README.md` (original Python docs)
+**Check:** `README.md`
 - Design philosophy
 - Architecture diagrams
 - ADRs (Architecture Decision Records)
@@ -141,12 +141,12 @@ See [examples/README.md](examples/README.md) for more!
 
 **Time:** 30 minutes
 
-### Path 3: "I'm migrating from Python"
-1. ✅ Read: SETUP_SUMMARY.md (Python → Node.js mapping)
-2. ✅ Run: `npm run test` (equivalent to Python smoke test)
-3. ✅ Run: `npm run index` (equivalent to Python indexer)
-4. ✅ Run: `npm run dev` (new! Web UI)
-5. ✅ Compare code: `server/` vs `src/`
+### Path 3: "I want quick reference"
+1. ✅ Read: SETUP_SUMMARY.md (command cheat sheet)
+2. ✅ Run: `npm run test`
+3. ✅ Run: `npm run index`
+4. ✅ Run: `npm run dev`
+5. ✅ Explore: Code structure in `server/` and `client/`
 
 **Time:** 15 minutes
 
@@ -216,21 +216,14 @@ npm start
 
 A RAG chatbot that lets you ask questions about your indexed documents using the Glean APIs. Think of it as "ChatGPT for your company docs".
 
-### Q: What changed from Python?
+### Q: What features does this have?
 
-✅ All Python functionality preserved
-✅ Added React web UI
-✅ Added REST API
+✅ RAG-based question answering with Glean APIs
+✅ React web UI for visual interaction
+✅ REST API for integration
 ✅ TypeScript for type safety
-✅ Better dev experience (hot reload, etc.)
-
-### Q: Do I need to know Python?
-
-No! This is a complete Node.js/TypeScript rewrite. If you know JavaScript/React, you're good.
-
-### Q: Do I need to know the Python version?
-
-No, but the original Python README.md has great design docs worth reading.
+✅ MCP server for tool integration
+✅ Hot reload and modern dev experience
 
 ### Q: Can I still use MCP?
 
@@ -296,12 +289,12 @@ npm run index
 3. **Read:** README_NODE.md → Architecture section
 4. **Explore:** `server/rag.ts` (RAG orchestration)
 
-### For Python Developers
+### For Backend Developers
 
-1. **Familiar:** Original Python codebase
-2. **New:** TypeScript, React, Vite
-3. **Read:** SETUP_SUMMARY.md → Migration section
-4. **Compare:** `server/` (TS) vs `src/` (Python)
+1. **Stack:** Node.js, TypeScript, Express
+2. **New:** Glean APIs, RAG pattern
+3. **Read:** README_NODE.md → Backend Architecture
+4. **Explore:** `server/` (core RAG logic)
 
 ### For DevOps/Deployment
 
@@ -403,7 +396,7 @@ You're done when:
 | **TESTING.md** | Testing & validation | Need to verify |
 | **SETUP_SUMMARY.md** | Quick reference | Need a command |
 | **README_NODE.md** | Full technical docs | Want all details |
-| **README.md** | Original Python docs | Want design context |
+| **README.md** | Design & architecture | Want design context |
 | **test-all.sh** | Automated tests | Want to validate |
 
 ---

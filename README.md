@@ -20,7 +20,7 @@ A working prototype that:
 
 ## Architecture (one-paragraph version)
 
-The MCP client sends a question to a local MCP server (`mcp_server.py`) over stdio. The server invokes the RAG orchestrator (`rag.py`), which calls the Glean Search API via the `QueryClient` for top-k retrieval, then the Glean Chat API for grounded generation, then validates that cited documents came from the retrieval set, and returns `{answer, sources[]}` to the client. A separate one-time indexer (`indexer.py`) uses the privileged `IndexingClient` to push the local corpus to the `interviewds` sandbox datasource, with stable content-hash IDs for idempotency. The two client classes exist to honor Glean's separation of indexing and client auth tokens — see ADR-004. Full flow in `architecture_diagram.svg`.
+The MCP client sends a question to a local MCP server (`mcp-server.ts`) over stdio. The server invokes the RAG orchestrator (`rag.ts`), which calls the Glean Search API via the `QueryClient` for top-k retrieval, then the Glean Chat API for grounded generation, then validates that cited documents came from the retrieval set, and returns `{answer, sources[]}` to the client. A separate one-time indexer (`indexer.ts`) uses the privileged `IndexingClient` to push the local corpus to the `interviewds` sandbox datasource, with stable content-hash IDs for idempotency. The two client classes exist to honor Glean's separation of indexing and client auth tokens — see ADR-004. Full flow in `architecture_diagram.svg`.
 
 ---
 
@@ -28,23 +28,29 @@ The MCP client sends a question to a local MCP server (`mcp_server.py`) over std
 
 ```
 .
-├── README.md                    ← this file
+├── README.md                    ← this file (design documentation)
+├── README_NODE.md               ← Node.js/TypeScript implementation docs
 ├── DESIGN_NOTE.md               ← BTABoK-framed design note
 ├── architecture_diagram.svg     ← companion data flow diagram
 ├── .env.example                 ← template for required env vars
 ├── .gitignore
-├── requirements.txt
+├── package.json
+├── tsconfig.json
 ├── corpus/                      ← small sample document set
 │   └── hr_remote_work_policy.md
-├── src/
-│   ├── __init__.py
-│   ├── config.py                ← env loading, typed config, three tokens
-│   ├── glean_client.py          ← IndexingClient + QueryClient
-│   ├── indexer.py               ← corpus → Indexing API
-│   ├── rag.py                   ← retrieve() + ground() + assemble()
-│   └── mcp_server.py            ← MCP tool surface
-└── scripts/
-    └── smoke_test.py            ← pre-flight end-to-end check
+├── server/                      ← Backend (Node.js/TypeScript)
+│   ├── config.ts                ← env loading, typed config, three tokens
+│   ├── glean-client.ts          ← IndexingClient + QueryClient
+│   ├── rag.ts                   ← retrieve() + ground() + assemble()
+│   ├── index.ts                 ← Express REST API server
+│   ├── mcp-server.ts            ← MCP tool surface
+│   └── scripts/
+│       ├── indexer.ts           ← corpus → Indexing API
+│       └── smoke-test.ts        ← pre-flight end-to-end check
+└── client/                      ← Frontend (React/Vite)
+    └── src/
+        ├── App.tsx              ← Main React application
+        └── components/          ← UI components
 ```
 
 ---
@@ -53,16 +59,15 @@ The MCP client sends a question to a local MCP server (`mcp_server.py`) over std
 
 ### 1. Prerequisites
 
-- Python 3.11+
+- Node.js 18+
 - Sandbox credentials from the exercise instructions (instance `support-lab`, three tokens, login `alex@glean-sandbox.com`)
 - An MCP-compatible client (Cursor or Claude Desktop) for interactive use
 
 ### 2. Install
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+npm install
+cd client && npm install && cd ..
 ```
 
 ### 3. Configure
@@ -94,7 +99,7 @@ Optional:
 ### 4. Verify environment (smoke test)
 
 ```bash
-python -m scripts.smoke_test
+npm run test
 ```
 
 This runs a minimal end-to-end sanity check: auth with each token, a trivial Search call, a trivial Chat call. Run this before touching anything else — and again before the live interview.
@@ -102,19 +107,29 @@ This runs a minimal end-to-end sanity check: auth with each token, a trivial Sea
 ### 5. Index the corpus (one-time)
 
 ```bash
-python -m src.indexer
+npm run index
 ```
 
 Expected output: per-document upsert logs and a final summary count. Re-running is idempotent — documents are keyed by stable content hash.
 
 **Note on indexing latency.** The Indexing API is asynchronous. Documents are typically searchable within a minute or two after a successful 200 response, but not instantly. Wait before testing retrieval.
 
-### 6. Run the MCP server
+### 6. Run the application
 
-For interactive testing without an MCP client:
+For the web interface (recommended):
 
 ```bash
-python -m src.mcp_server --test "What is our remote work policy?"
+npm run dev
+```
+
+This starts both:
+- Backend API on http://localhost:3001
+- Frontend UI on http://localhost:5173
+
+For interactive testing via command line:
+
+```bash
+npm run mcp -- --test "What is our remote work policy?"
 ```
 
 For use with Cursor or Claude Desktop, add to your MCP config (example for Claude Desktop `~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -123,8 +138,8 @@ For use with Cursor or Claude Desktop, add to your MCP config (example for Claud
 {
   "mcpServers": {
     "glean-rag": {
-      "command": "python",
-      "args": ["-m", "src.mcp_server"],
+      "command": "node",
+      "args": ["--loader", "tsx", "server/mcp-server.ts"],
       "cwd": "/absolute/path/to/this/repo",
       "env": {
         "GLEAN_INDEXING_TOKEN": "...",

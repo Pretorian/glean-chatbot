@@ -19,7 +19,7 @@
 
 - **Status:** Accepted
 - **Context.** Glean issues distinct tokens for indexing (back-end write path) and client operations (Chat, Search). The sandbox provides three tokens: Indexing, Search, and Client (Chat + Search, Global scope). A naive implementation collapses these into one client with one token passed per call.
-- **Decision.** Model the separation explicitly. `IndexingClient` uses the Indexing token and is only imported by `indexer.py`. `QueryClient` uses the Client (or optional Search) token and is the only thing the MCP tool code touches. Tokens are loaded into typed fields in `Config` and passed to clients at construction time — they are never read from `os.environ` inside business logic.
+- **Decision.** Model the separation explicitly. `IndexingClient` uses the Indexing token and is only imported by `indexer.ts`. `QueryClient` uses the Client (or optional Search) token and is the only thing the MCP tool code touches. Tokens are loaded into typed fields in `Config` and passed to clients at construction time — they are never read from environment variables inside business logic.
 - **Rationale.**
   - Matches Glean's own trust-boundary design — indexing is a privileged pipeline operation; search/chat run on behalf of a user identity.
   - Makes it structurally impossible for the MCP tool to accidentally call the Indexing API with a user-scoped token (or vice versa).
@@ -59,13 +59,13 @@ This section answers that prompt in the order it's asked, then closes with a des
 
 **What changes architecturally.**
 
-- **Deployment shape.** Move from "local MCP server" to "hosted HTTP service." The `rag.py` core — `retrieve / ground / assemble` — stays unchanged. Wrap it in a thin FastAPI service behind an internal load balancer. This is roughly a day of work because the RAG core was deliberately kept transport-agnostic (ADR-002 / code structure).
-- **Keep the MCP tool.** Do not delete it. It remains valuable for power users in Cursor and for internal debugging. The MCP server and the HTTP service share the same `rag.answer_question()` entry point.
+- **Deployment shape.** Move from "local MCP server" to "hosted HTTP service." The `rag.ts` core — `retrieve / ground / assemble` — stays unchanged. Wrap it in a thin Express service behind an internal load balancer. This is roughly a day of work because the RAG core was deliberately kept transport-agnostic (ADR-002 / code structure).
+- **Keep the MCP tool.** Do not delete it. It remains valuable for power users in Cursor and for internal debugging. The MCP server and the HTTP service share the same `rag.answerQuestion()` entry point.
 - **Chatbot surface integration.** Two paths:
   - *Glean Chat SDK / embedded experience.* Lowest integration cost; inherits Glean's UI, citation rendering, and follow-up-question handling. Appropriate when "make Glean available in Slack" is the intent.
-  - *Custom surface on the FastAPI service.* Required when the customer has a bespoke support UX or needs to inject their own policy layer (PII scrubbing, compliance disclaimers, ticket-creation integration).
+  - *Custom surface on the Express service.* Required when the customer has a bespoke support UX or needs to inject their own policy layer (PII scrubbing, compliance disclaimers, ticket-creation integration).
 - **Session & conversation memory.** The prototype is single-turn. A support chatbot needs multi-turn continuity — "and what about for contractors?" needs to remember the previous question was about remote work. Add a thin session store (Redis, 30-minute TTL) keyed on session ID; pass the last N turns to Chat as context.
-- **Streaming.** Support chatbots feel slow without streaming tokens. The Chat API supports streaming; expose SSE or WebSocket on the FastAPI surface.
+- **Streaming.** Support chatbots feel slow without streaming tokens. The Chat API supports streaming; expose SSE or WebSocket on the Express service.
 
 ### 8.3 Stronger permissions
 
@@ -115,7 +115,7 @@ A pragmatic 10–12 week plan assuming a dedicated small team (1 architect + 2 e
 Capture the canvases from this design note for the real customer context: ASR for each team's use case, updated Context View with real systems, QATT cards with the customer's actual latency and accuracy targets, ADRs for deployment shape and auth approach. Validate with security, platform, and a pilot team. Produce a one-page reference architecture for the customer's enterprise architect.
 
 **Weeks 3–6: Build (thin vertical slice first).**
-- Week 3: FastAPI wrapper around `rag.py`; Redis-backed session store; OAuth token exchange.
+- Week 3: Express wrapper around `rag.ts`; Redis-backed session store; OAuth token exchange.
 - Week 4: Indexing pipeline for one pilot team's content, with real ACLs.
 - Week 5: Observability — metrics, tracing, structured logs flowing to the customer's stack.
 - Week 6: Rollout tooling — feature flags, canary deployment.

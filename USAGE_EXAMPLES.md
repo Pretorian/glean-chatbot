@@ -138,7 +138,7 @@ curl http://localhost:3001/health
 }
 ```
 
-### Using JavaScript/Node.js
+### Using JavaScript/TypeScript
 
 ```javascript
 // Ask a question
@@ -157,23 +157,19 @@ console.log('Sources:', data.sources.length);
 console.log('Latency:', data.meta.latencyMs.totalMs, 'ms');
 ```
 
-### Using Python
+### Using Node.js with axios
 
-```python
-import requests
+```javascript
+import axios from 'axios';
 
-response = requests.post(
-    'http://localhost:3001/api/ask',
-    json={
-        'question': 'What is our remote work policy?',
-        'maxSources': 5
-    }
-)
+const { data } = await axios.post('http://localhost:3001/api/ask', {
+  question: 'What is our remote work policy?',
+  maxSources: 5
+});
 
-data = response.json()
-print(f"Answer: {data['answer']}")
-print(f"Sources: {len(data['sources'])}")
-print(f"Latency: {data['meta']['latencyMs']['totalMs']}ms")
+console.log('Answer:', data.answer);
+console.log('Sources:', data.sources.length);
+console.log('Latency:', data.meta.latencyMs.totalMs, 'ms');
 ```
 
 ---

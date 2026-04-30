@@ -12,6 +12,7 @@
     "build:client": "cd client && npm run build",
     "start": "node dist/server/index.js",
     "index": "tsx server/scripts/indexer.ts",
+    "dashboard": "tsx server/scripts/dashboard.ts",
     "mcp": "tsx server/mcp-server.ts",
     "test": "tsx server/scripts/smoke-test.ts",
     "test:all": "./test-all.sh",

@@ -190,6 +190,23 @@ export class QueryClient extends BaseClient {
   }
 
   /**
+   * Get all indexed documents from a datasource.
+   * Uses a broad search query to retrieve all available documents.
+   */
+  async getAllDocuments(datasource: string, maxResults: number = 100): Promise<CallResult> {
+    const url = `${this.cfg.restBaseUrl}/search`;
+    const payload: any = {
+      query: '*', // Wildcard to match all documents
+      pageSize: maxResults,
+      requestOptions: {
+        datasourcesFilter: [datasource],
+      },
+    };
+
+    return this.post(url, payload, 'get_all_documents');
+  }
+
+  /**
    * Grounded generation. We pass retrieved documents as inline context.
    *
    * Note: Chat can also retrieve against the tenant's indexed content

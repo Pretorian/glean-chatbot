@@ -130,18 +130,47 @@ class IndexingClient(_BaseClient):
     def __init__(self, cfg: Config):
         super().__init__(cfg, token=cfg.glean_indexing_token, label="indexing")
 
+    def start_upload(self, upload_id: str) -> CallResult:
+        """Start a bulk upload operation."""
+        url = f"{self.cfg.indexing_base_url}/bulkuploadstart"
+        payload = {
+            "datasource": self.cfg.glean_datasource,
+            "uploadId": upload_id,
+        }
+        return self._post(url, payload, op="start_upload")
+
+    def upload_documents(self, upload_id: str, documents: list[dict]) -> CallResult:
+        """Upload documents to an ongoing bulk upload operation."""
+        url = f"{self.cfg.indexing_base_url}/bulkindexdocuments"
+        payload = {
+            "datasource": self.cfg.glean_datasource,
+            "uploadId": upload_id,
+            "documents": documents,
+        }
+        return self._post(url, payload, op="upload_documents")
+
+    def complete_upload(self, upload_id: str) -> CallResult:
+        """Complete a bulk upload operation."""
+        url = f"{self.cfg.indexing_base_url}/bulkuploadcomplete"
+        payload = {
+            "datasource": self.cfg.glean_datasource,
+            "uploadId": upload_id,
+        }
+        return self._post(url, payload, op="complete_upload")
+
     def index_documents(self, documents: list[dict]) -> CallResult:
         """
         Bulk upsert documents to the configured datasource.
         Note: Indexing is asynchronous — documents may not be immediately
         searchable after this call returns 200.
+
+        Uses uploadId for idempotency without start/complete workflow.
         """
         url = f"{self.cfg.indexing_base_url}/bulkindexdocuments"
         payload = {
             "datasource": self.cfg.glean_datasource,
-            "documents": documents,
-            # uploadId makes re-runs idempotent on Glean's side too.
             "uploadId": f"prototype-{int(time.time())}",
+            "documents": documents,
         }
         return self._post(url, payload, op="index_documents")
 

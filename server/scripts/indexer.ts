@@ -9,7 +9,7 @@
 
 import { createHash } from 'crypto';
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { join, resolve, basename } from 'path';
+import { join, resolve, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { loadConfig } from '../config.js';
@@ -18,6 +18,11 @@ import { IndexingClient } from '../glean-client.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const CORPUS_DIR = resolve(__dirname, '../../corpus');
+const SUPPORTED_EXTENSIONS = ['.md', '.txt'];
+const MIME_BY_EXT: Record<string, string> = {
+  '.md': 'text/markdown',
+  '.txt': 'text/plain',
+};
 
 function stableId(prefix: string, content: string): string {
   const hash = createHash('sha256').update(content, 'utf-8').digest('hex');
@@ -26,14 +31,15 @@ function stableId(prefix: string, content: string): string {
 
 function buildDocument(filePath: string, datasource: string, instanceUrl: string): any {
   const content = readFileSync(filePath, 'utf-8');
+  const ext = extname(filePath).toLowerCase();
+  const stem = basename(filePath, ext);
 
   // First non-empty line as title, falling back to filename.
   const lines = content.split('\n');
-  const title = lines.find((line) => line.trim())?.replace(/^#\s*/, '').trim() ||
-                basename(filePath, '.md');
+  const title = lines.find((line) => line.trim())?.replace(/^#\s*/, '').trim() || stem;
 
   const docId = stableId(datasource, content);
-  const filename = basename(filePath, '.md');
+  const slug = stem.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   // The exact schema depends on the Indexing API version — confirm against
   // sandbox docs. This shape matches the common Glean custom-datasource schema.
@@ -43,9 +49,9 @@ function buildDocument(filePath: string, datasource: string, instanceUrl: string
     id: docId,
     title,
     datasource,
-    viewURL: `https://internal.example.com/policies/${filename}`,
+    viewURL: `https://internal.example.com/policies/${slug}`,
     body: {
-      mimeType: 'text/markdown',
+      mimeType: MIME_BY_EXT[ext] ?? 'text/plain',
       textContent: content,
     },
     permissions: {
@@ -56,7 +62,22 @@ function buildDocument(filePath: string, datasource: string, instanceUrl: string
   };
 }
 
+function parseFlags(argv: string[]): { bulk: boolean; pageSize?: number; forceRestart: boolean } {
+  let bulk = false;
+  let pageSize: number | undefined;
+  let forceRestart = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--bulk') bulk = true;
+    else if (a === '--force-restart') forceRestart = true;
+    else if (a === '--page-size') pageSize = parseInt(argv[++i], 10);
+    else if (a.startsWith('--page-size=')) pageSize = parseInt(a.split('=')[1], 10);
+  }
+  return { bulk, pageSize, forceRestart };
+}
+
 async function run(): Promise<void> {
+  const flags = parseFlags(process.argv.slice(2));
   const cfg = loadConfig();
   const client = new IndexingClient(cfg);
 
@@ -66,12 +87,14 @@ async function run(): Promise<void> {
   }
 
   const files = readdirSync(CORPUS_DIR)
-    .filter((file) => file.endsWith('.md'))
+    .filter((file) => SUPPORTED_EXTENSIONS.includes(extname(file).toLowerCase()))
     .map((file) => join(CORPUS_DIR, file))
     .sort();
 
   if (files.length === 0) {
-    console.error(`No markdown files in ${CORPUS_DIR}`);
+    console.error(
+      `No ${SUPPORTED_EXTENSIONS.join('/')} files in ${CORPUS_DIR}`
+    );
     process.exit(1);
   }
 
@@ -79,13 +102,38 @@ async function run(): Promise<void> {
     buildDocument(filePath, cfg.config.gleanDatasource, cfg.config.gleanInstance)
   );
 
+  const mode = flags.bulk ? 'bulk' : 'upsert';
   console.log(
     JSON.stringify({
       message: 'indexing_start',
+      mode,
       count: documents.length,
       datasource: cfg.config.gleanDatasource,
     })
   );
+
+  if (flags.bulk) {
+    const results = await client.bulkIndexDocuments(documents, {
+      pageSize: flags.pageSize,
+      forceRestartUpload: flags.forceRestart,
+    });
+    const totalLatency = results.reduce((sum, r) => sum + r.latencyMs, 0);
+    console.log(
+      JSON.stringify({
+        message: 'indexing_complete',
+        mode,
+        count: documents.length,
+        pages: results.length,
+        totalLatencyMs: totalLatency,
+        lastRequestId: results[results.length - 1].requestId,
+      })
+    );
+    console.log(
+      `\nBulk-indexed ${documents.length} documents into ${cfg.config.gleanDatasource} ` +
+        `across ${results.length} page(s).`
+    );
+    return;
+  }
 
   // Batch if the API requires it; for ~20 docs a single call is fine.
   const result = await client.indexDocuments(documents);
@@ -93,6 +141,7 @@ async function run(): Promise<void> {
   console.log(
     JSON.stringify({
       message: 'indexing_complete',
+      mode,
       count: documents.length,
       requestId: result.requestId,
       latencyMs: result.latencyMs,

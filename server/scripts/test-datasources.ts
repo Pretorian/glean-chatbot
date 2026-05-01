@@ -63,7 +63,7 @@ async function testDatasource(
       console.log(`   Testing URL pattern: ${pattern.name}`);
       console.log(`   URL: ${pattern.url}`);
 
-      await client.indexDocuments([testDoc]);
+      await client.indexDocuments([testDoc], { datasource });
 
       console.log(`   ✅ SUCCESS! This datasource accepts this URL pattern.`);
       return { success: true };

@@ -4,7 +4,11 @@
       "Bash(npm run index:*)",
       "Bash(npm run dev:*)",
       "Bash(npm run mcp:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(python3 *)",
+      "Bash(npm run *)",
+      "Bash(lsof -ti:3001 -ti:5173)",
+      "Bash(xargs -r kill -9)"
     ],
     "deny": [],
     "ask": []

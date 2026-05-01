@@ -138,26 +138,105 @@ class BaseClient {
   }
 }
 
+export interface BulkIndexOptions {
+  /** Page size for chunking documents across /bulkindexdocuments calls. */
+  pageSize?: number;
+  /** Override the auto-generated uploadId (must be stable across pages). */
+  uploadId?: string;
+  /** Restart any prior interrupted upload with this uploadId. */
+  forceRestartUpload?: boolean;
+  /**
+   * Skip the safety check that prevents the last-page deletion sweep when
+   * the bulk set is suspiciously smaller than the live index.
+   */
+  disableStaleDocumentDeletionCheck?: boolean;
+  /** Override the configured datasource for this upload. */
+  datasource?: string;
+}
+
 export class IndexingClient extends BaseClient {
   constructor(cfg: ConfiguredInstance) {
     super(cfg, cfg.config.gleanIndexingToken, 'indexing');
   }
 
   /**
-   * Bulk upsert documents to the configured datasource.
+   * Upsert documents to the configured datasource via /indexdocuments.
+   * Additive — documents missing from this call are NOT removed. Use
+   * bulkIndexDocuments() for full-sync semantics.
    * Note: Indexing is asynchronous — documents may not be immediately
    * searchable after this call returns 200.
    */
-  async indexDocuments(documents: any[]): Promise<CallResult> {
+  async indexDocuments(
+    documents: any[],
+    opts: { datasource?: string } = {}
+  ): Promise<CallResult> {
     const url = `${this.cfg.indexingBaseUrl}/indexdocuments`;
     const payload = {
-      datasource: this.cfg.config.gleanDatasource,
+      datasource: opts.datasource ?? this.cfg.config.gleanDatasource,
       documents,
       // uploadId makes re-runs idempotent on Glean's side too.
       uploadId: `prototype-${Math.floor(Date.now() / 1000)}`,
     };
 
     return this.post(url, payload, 'index_documents');
+  }
+
+  /**
+   * Full-sync upload via /bulkindexdocuments. Chunks documents into pages
+   * sharing one uploadId, marking isFirstPage / isLastPage. When the last
+   * page lands, Glean drops any documents in the datasource that weren't
+   * part of this upload — the canonical "replace the source" flow.
+   *
+   * Returns the per-page CallResults in upload order.
+   */
+  async bulkIndexDocuments(
+    documents: any[],
+    opts: BulkIndexOptions = {}
+  ): Promise<CallResult[]> {
+    const url = `${this.cfg.indexingBaseUrl}/bulkindexdocuments`;
+    const pageSize = opts.pageSize ?? 50;
+    const uploadId = opts.uploadId ?? `bulk-${Math.floor(Date.now() / 1000)}`;
+
+    if (documents.length === 0) {
+      throw new Error('bulkIndexDocuments: documents must be non-empty');
+    }
+
+    const pages: any[][] = [];
+    for (let i = 0; i < documents.length; i += pageSize) {
+      pages.push(documents.slice(i, i + pageSize));
+    }
+
+    const results: CallResult[] = [];
+    for (let i = 0; i < pages.length; i++) {
+      const isFirstPage = i === 0;
+      const isLastPage = i === pages.length - 1;
+      const payload: any = {
+        datasource: opts.datasource ?? this.cfg.config.gleanDatasource,
+        documents: pages[i],
+        uploadId,
+        isFirstPage,
+        isLastPage,
+      };
+      if (isFirstPage && opts.forceRestartUpload) {
+        payload.forceRestartUpload = true;
+      }
+      if (isLastPage && opts.disableStaleDocumentDeletionCheck) {
+        payload.disableStaleDocumentDeletionCheck = true;
+      }
+
+      this.log('info', 'bulk_index_page', {
+        uploadId,
+        page: i + 1,
+        totalPages: pages.length,
+        pageDocs: pages[i].length,
+        isFirstPage,
+        isLastPage,
+      });
+
+      results.push(await this.post(url, payload, 'bulk_index_documents'));
+    }
+
+    return results;
   }
 }
 

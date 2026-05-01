@@ -67,7 +67,7 @@ function requireEnv(name: string): string {
 
 export function loadConfig(): ConfiguredInstance {
   const config: Config = {
-    gleanInstance: process.env.GLEAN_INSTANCE || 'support-lab-be.glean.com',
+    gleanInstance: process.env.GLEAN_INSTANCE || 'https://support-lab-be.glean.com',
     gleanDatasource: process.env.GLEAN_DATASOURCE || 'interviewds',
     gleanIndexingToken: requireEnv('GLEAN_INDEXING_TOKEN'),
     gleanClientToken: requireEnv('GLEAN_CLIENT_TOKEN'),

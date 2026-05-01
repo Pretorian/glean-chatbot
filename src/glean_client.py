@@ -132,7 +132,9 @@ class IndexingClient(_BaseClient):
 
     def index_documents(self, documents: list[dict]) -> CallResult:
         """
-        Bulk upsert documents to the configured datasource.
+        Upsert documents to the configured datasource via /indexdocuments.
+        Additive — documents missing from this call are NOT removed. Use
+        bulk_index_documents() for full-sync semantics.
         Note: Indexing is asynchronous — documents may not be immediately
         searchable after this call returns 200.
         """
@@ -144,6 +146,59 @@ class IndexingClient(_BaseClient):
             "uploadId": f"prototype-{int(time.time())}",
         }
         return self._post(url, payload, op="index_documents")
+
+    def bulk_index_documents(
+        self,
+        documents: list[dict],
+        *,
+        page_size: int = 50,
+        upload_id: Optional[str] = None,
+        force_restart_upload: bool = False,
+        disable_stale_document_deletion_check: bool = False,
+    ) -> list[CallResult]:
+        """
+        Full-sync upload via /bulkindexdocuments. Chunks documents into pages
+        sharing one uploadId, marking isFirstPage / isLastPage. When the last
+        page lands, Glean drops any documents in the datasource that weren't
+        part of this upload — the canonical "replace the source" flow.
+        """
+        if not documents:
+            raise ValueError("bulk_index_documents: documents must be non-empty")
+
+        url = f"{self.cfg.indexing_base_url}/bulkindexdocuments"
+        upload_id = upload_id or f"bulk-{int(time.time())}"
+        pages = [documents[i : i + page_size] for i in range(0, len(documents), page_size)]
+
+        results: list[CallResult] = []
+        for i, page in enumerate(pages):
+            is_first = i == 0
+            is_last = i == len(pages) - 1
+            payload: dict[str, Any] = {
+                "datasource": self.cfg.glean_datasource,
+                "documents": page,
+                "uploadId": upload_id,
+                "isFirstPage": is_first,
+                "isLastPage": is_last,
+            }
+            if is_first and force_restart_upload:
+                payload["forceRestartUpload"] = True
+            if is_last and disable_stale_document_deletion_check:
+                payload["disableStaleDocumentDeletionCheck"] = True
+
+            log.info(
+                "bulk_index_page",
+                extra={
+                    "upload_id": upload_id,
+                    "page": i + 1,
+                    "total_pages": len(pages),
+                    "page_docs": len(page),
+                    "is_first_page": is_first,
+                    "is_last_page": is_last,
+                },
+            )
+            results.append(self._post(url, payload, op="bulk_index_documents"))
+
+        return results
 
 
 class QueryClient(_BaseClient):

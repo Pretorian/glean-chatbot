@@ -38,7 +38,8 @@ npm run dev
 | `npm run test` | Pre-flight smoke test |
 | `npm run test:all` | Comprehensive test suite |
 | `npm run test:auth` | Verify authentication |
-| `npm run index` | Index documents from corpus/ |
+| `npm run index` | Index documents from corpus/ (upsert via `/indexdocuments`) |
+| `npm run index -- --bulk` | Full-sync upload via `/bulkindexdocuments` |
 | `npm run mcp` | Run MCP server |
 
 ---
@@ -201,7 +202,7 @@ curl http://localhost:3001/api/ask \
 ```
 glean/
 ├── .env                    # Your configuration
-├── corpus/                 # Documents to index (*.md)
+├── corpus/                 # Documents to index (*.md, *.txt)
 ├── server/                 # Node.js backend
 │   ├── config.ts
 │   ├── glean-client.ts

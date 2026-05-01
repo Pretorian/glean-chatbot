@@ -215,6 +215,8 @@ Next steps:
 npm run index
 ```
 
+Picks up `*.md` and `*.txt` files from `corpus/`. Add `--bulk` to use the `/bulkindexdocuments` endpoint for full-sync uploads (`--page-size=N`, `--force-restart` also accepted).
+
 **Expected output:**
 
 ```
@@ -507,8 +509,8 @@ nano .env
 # Verify corpus exists
 ls -la corpus/
 
-# Should show .md files
-ls corpus/*.md
+# Should show .md or .txt files
+ls corpus/*.md corpus/*.txt 2>/dev/null
 ```
 
 #### Documents not searchable after indexing
@@ -637,8 +639,8 @@ If you're still stuck:
 Once everything is working:
 
 1. **Add more documents:**
-   - Place `.md` files in `corpus/`
-   - Run `npm run index` again
+   - Place `.md` or `.txt` files in `corpus/`
+   - Run `npm run index` again (add `--bulk` for a full-sync upload)
    - Wait 1-2 minutes
    - Test with relevant questions
 

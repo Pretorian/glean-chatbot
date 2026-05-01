@@ -1,5 +1,7 @@
 # Indexing Issue - viewURL Pattern Validation
 
+> Note: `npm run test:datasources` now reports accurate per-datasource verdicts. A prior bug caused it to send the env-configured datasource in the request payload while setting a different `document.datasource` on each loop iteration, producing false-negative `400` errors that masked which datasources actually accept which URL patterns.
+
 ## Problem
 
 When running `npm run index`, you may encounter this error:

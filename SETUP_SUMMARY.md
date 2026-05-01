@@ -57,7 +57,7 @@ npm run test:all
 # or
 ./test-all.sh
 
-# Re-index documents
+# Re-index documents (add --bulk for full-sync upload via /bulkindexdocuments)
 npm run index
 
 # MCP test mode
@@ -127,8 +127,8 @@ glean/
 │           └── QuestionInput.tsx
 │
 ├── Data
-│   └── corpus/                ← Markdown documents to index
-│       └── *.md
+│   └── corpus/                ← Documents to index
+│       └── *.md, *.txt
 │
 └── Testing
     └── test-all.sh            ← Comprehensive test suite
@@ -321,9 +321,9 @@ Check actual performance in response `meta.latencyMs`
 
 1. **Add more documents:**
    ```bash
-   # Add .md files to corpus/
+   # Add .md or .txt files to corpus/
    cp your-docs/*.md corpus/
-   # Re-index
+   # Re-index (add --bulk for full-sync upload)
    npm run index
    # Wait 90 seconds
    # Test with relevant questions

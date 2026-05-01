@@ -110,7 +110,7 @@ This runs a minimal end-to-end sanity check: auth with each token, a trivial Sea
 npm run index
 ```
 
-Expected output: per-document upsert logs and a final summary count. Re-running is idempotent — documents are keyed by stable content hash.
+Expected output: per-document upsert logs and a final summary count. Re-running is idempotent — documents are keyed by stable content hash. The indexer picks up `*.md` and `*.txt` files from `corpus/`. Pass `--bulk` to use the `/bulkindexdocuments` endpoint for full-sync uploads (`--page-size=N`, `--force-restart` also accepted).
 
 **Note on indexing latency.** The Indexing API is asynchronous. Documents are typically searchable within a minute or two after a successful 200 response, but not instantly. Wait before testing retrieval.
 

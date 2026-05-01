@@ -250,9 +250,12 @@ According to the company's Remote Work Policy...
 
 ### Indexing Documents
 
-**Index all documents in corpus:**
+**Index all documents in corpus** (`*.md` and `*.txt`):
 ```bash
 npm run index
+
+# Full-sync upload via /bulkindexdocuments (drops docs not present in this run):
+npm run index -- --bulk
 ```
 
 **Expected output:**
@@ -664,7 +667,7 @@ npm run dev:server
 
 ## Next Steps
 
-1. **Add more documents** - Place `.md` files in `corpus/` and run `npm run index`
+1. **Add more documents** - Place `.md` or `.txt` files in `corpus/` and run `npm run index` (add `--bulk` for full-sync upload)
 2. **Customize UI** - Edit React components in `client/src/components/`
 3. **Integrate** - Use REST API in your own applications
 4. **Deploy** - See README_NODE.md for production deployment

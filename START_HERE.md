@@ -270,9 +270,9 @@ Security! Matches how you'd deploy this in production - indexing runs as a servi
 
 Yes!
 ```bash
-# Add .md files to corpus/
+# Add .md or .txt files to corpus/
 cp your-docs/*.md corpus/
-# Re-index
+# Re-index (add --bulk for full-sync upload)
 npm run index
 # Wait 90 seconds
 # Test with relevant questions

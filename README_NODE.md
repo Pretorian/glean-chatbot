@@ -137,6 +137,8 @@ Optional:
 npm run index
 ```
 
+The indexer picks up `*.md` and `*.txt` files from `corpus/`. Pass `--bulk` to use the `/bulkindexdocuments` endpoint for full-sync uploads (`--page-size=N`, `--force-restart` also accepted).
+
 Expected output: per-document upsert logs and a final summary count. Re-running is idempotent — documents are keyed by stable content hash.
 
 **Note on indexing latency:** The Indexing API is asynchronous. Documents are typically searchable within a minute or two after a successful 200 response, but not instantly. Wait before testing retrieval.
@@ -302,7 +304,8 @@ For production deployment:
 | `npm run dev:client` | Run frontend only |
 | `npm run build` | Build for production |
 | `npm start` | Run production build |
-| `npm run index` | Index corpus documents |
+| `npm run index` | Index corpus documents (upsert via `/indexdocuments`) |
+| `npm run index -- --bulk` | Full-sync upload via `/bulkindexdocuments` |
 | `npm run mcp` | Run MCP server |
 | `npm run test` | Run smoke tests |
 | `npm run lint` | Lint TypeScript code |
@@ -373,7 +376,7 @@ All functionality from the Python version is preserved, with the addition of:
 - Verify proxy configuration in `client/vite.config.ts`
 
 **Documents not indexing:**
-- Check that corpus directory exists and contains `.md` files
+- Check that corpus directory exists and contains `.md` or `.txt` files
 - Verify GLEAN_INDEXING_TOKEN is correct
 - Wait 1-2 minutes after indexing for documents to become searchable
 

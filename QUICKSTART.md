@@ -33,7 +33,7 @@ Edit `.env` and add your three Glean tokens:
 npm run index
 ```
 
-Wait 1-2 minutes for documents to become searchable.
+Picks up `*.md` and `*.txt` files from `corpus/`. Add `--bulk` for a full-sync upload via `/bulkindexdocuments`. Wait 1-2 minutes for documents to become searchable.
 
 ### 4. Start the app
 

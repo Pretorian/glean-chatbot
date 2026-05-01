@@ -22,7 +22,7 @@ Successfully refactored the entire Python Glean RAG chatbot into a modern full-s
 - Comprehensive test suite
 
 ✅ **Fixed:**
-- Indexing API endpoint (`/indexdocuments` instead of `/bulkindexdocuments`)
+- Indexing API endpoints: `/indexdocuments` by default; `/bulkindexdocuments` via `--bulk` for full-sync uploads
 - viewURL pattern matching (`https://internal.example.com/policies/...`)
 - Datasource configuration (`interviewds` is working)
 - Authentication (all 3 tokens working correctly)
@@ -318,8 +318,8 @@ glean/
 
 1. **Add More Documents**
    ```bash
-   cp your-docs/*.md corpus/
-   npm run index
+   cp your-docs/*.md corpus/   # or *.txt
+   npm run index               # add --bulk for full-sync upload
    ```
 
 2. **Customize UI**
